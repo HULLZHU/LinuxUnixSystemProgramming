@@ -7,7 +7,6 @@
 #include <fcntl.h>
 #include <string.h>
 #include  <errno.h>
-
 #define _FILE_NAME "/home/hezhu/Documents/APUE/20191225Threads/test.txt"
 
 void errExit(const char *arg)
@@ -19,7 +18,13 @@ void errExit(const char *arg)
 //  (0)    (1) (2)    (3)      (4)     (5)
 /* ./a.out cmd l_type l_whence l_start l_len*/
 int main(int argc, char *argv[])
-{
+{   
+    //corner case
+    if(argc != 6)
+    {
+        errExit("./app cmd l_type l_whence l_start l_len");
+    }
+    
     //(0) open the file and get the file descriptor
     int fd = open(_FILE_NAME, O_CREAT|O_RDWR);
     if(fd == -1)errExit("open()");
@@ -78,16 +83,18 @@ int main(int argc, char *argv[])
         }
     }
     else
-    {
-        if (status == 0)
-        {
+    {   //on error
+        if (status == -1)
+        {   
             if(type == F_RDLCK)
             {
-                printf("[PID = %ld] READ_LOCK\n", (long)getpid());
-            }
+                printf("[PID = %ld] READ_LOCK FAIELD\n", (long)getpid());
+                exit(EXIT_FAILURE);
+            }   
             else if(type == F_WRLCK)
             {
-                printf("[PID = %ld] WRITE_LOCK", (long)getpid());
+                printf("[PID = %ld] WRITE_LOCK FAILED", (long)getpid());
+                exit(EXIT_FAILURE);
             }
 
             else if(errno == EAGAIN || errno == EACCES)
@@ -103,6 +110,15 @@ int main(int argc, char *argv[])
                 errExit("fcntl-FSETLK(W)");
             }
         }
+        //on success
+        else
+        {
+            printf("[PID = %ld]%s\n", (long)getpid(), type== F_UNLCK ?"unlocked\n":"locked");
+        }
     }
-
+    while(1)
+    {
+        sleep(1);
+        printf("%ld in running\n", (long)getpid());
+    }
 }
